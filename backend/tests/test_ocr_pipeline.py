@@ -3,9 +3,12 @@ Test the full OCR → Gemini → DB pipeline.
 
 Run from backend/:
     python3 tests/test_ocr_pipeline.py
+    pytest tests/test_ocr_pipeline.py -v
 """
 import sys
 import os
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -38,16 +41,23 @@ def test_gemini_parse():
     print(f"    Gemini extracted {len(assignments)} assignments:")
     for a in assignments:
         print(f"      • {a.get('title')} | {a.get('due_date')} | {a.get('assignment_type')}")
-    return assignments
 
 
-def test_save_to_db(assignments):
+@pytest.fixture
+def parsed_assignments():
+    from services.calendar_service import parse_syllabus
+    result = parse_syllabus(SAMPLE_SYLLABUS)
+    return result.get("assignments", [])
+
+
+def test_save_to_db(parsed_assignments):
     print("\n[2] Testing save_assignments_to_db()...")
     before_rows = table("assignments").select(
         "id", filters={"user_id": f"eq.{TEST_USER}"}
     )
     before = len(before_rows)
 
+    assignments = parsed_assignments
     saved = save_assignments_to_db(TEST_USER, assignments)
     assert saved == len(assignments), f"Expected {len(assignments)} saved, got {saved}"
 
@@ -87,7 +97,9 @@ if __name__ == "__main__":
     print("=" * 55)
 
     try:
-        assignments = test_gemini_parse()
+        from services.calendar_service import parse_syllabus
+        test_gemini_parse()
+        assignments = parse_syllabus(SAMPLE_SYLLABUS).get("assignments", [])
         test_save_to_db(assignments)
         test_full_pipeline()
         print("\n✓ All tests passed")

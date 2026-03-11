@@ -10,3 +10,7 @@ pillow
 pypdf
 pypdfium2
 httpx
+
+# Testing
+pytest
+pytest-anyio
