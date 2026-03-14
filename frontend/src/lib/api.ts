@@ -68,6 +68,12 @@ export const sendAction = (sessionId: string, userId: string, actionType: string
     body: JSON.stringify({ session_id: sessionId, user_id: userId, action_type: actionType, mode, use_shared_context: useSharedContext }),
   });
 
+export const switchMode = (sessionId: string, userId: string, newMode: string) =>
+  fetchJSON<{ reply: string }>('/api/learn/mode-switch', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId, user_id: userId, new_mode: newMode }),
+  });
+
 export const endSession = (sessionId: string) =>
   fetchJSON<{ summary: any }>('/api/learn/end-session', {
     method: 'POST',

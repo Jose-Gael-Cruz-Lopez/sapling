@@ -8,7 +8,7 @@ import ModeSelector from '@/components/ModeSelector';
 import QuizPanel from '@/components/QuizPanel';
 import SessionSummary from '@/components/SessionSummary';
 import { GraphNode, GraphEdge, ChatMessage, TeachingMode, SessionSummary as SessionSummaryType } from '@/lib/types';
-import { startSession, sendChat, sendAction, endSession, getGraph, getSessions, resumeSession } from '@/lib/api';
+import { startSession, sendChat, sendAction, endSession, getGraph, getSessions, resumeSession, switchMode } from '@/lib/api';
 import Link from 'next/link';
 import { getMasteryLabel } from '@/lib/graphUtils';
 import { useUser } from '@/context/UserContext';
@@ -186,7 +186,23 @@ function LearnInner() {
     }
   };
 
-  const handleModeChange = (newMode: TeachingMode) => setMode(newMode);
+  const handleModeChange = async (newMode: TeachingMode) => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    if (sessionId) {
+      try {
+        const res = await switchMode(sessionId, USER_ID, newMode);
+        setMessages(prev => [...prev, {
+          id: `msg_${Date.now()}`,
+          role: 'assistant',
+          content: res.reply,
+          timestamp: new Date().toISOString(),
+        }]);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   const handleSelectCourse = (course: string) => {
     if (!course) return;

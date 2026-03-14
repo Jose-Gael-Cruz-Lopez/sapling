@@ -31,6 +31,12 @@ class ActionBody(BaseModel):
     use_shared_context: bool = True
 
 
+class ModeSwitchBody(BaseModel):
+    session_id: str
+    user_id: str = "user_andres"
+    new_mode: str
+
+
 # ── Quiz ──────────────────────────────────────────────────────────────────────
 
 class GenerateQuizBody(BaseModel):
