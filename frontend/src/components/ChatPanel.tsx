@@ -11,6 +11,7 @@ interface Props {
   onEndSession: () => void;
   loading: boolean;
   mode: TeachingMode;
+  prefillInput?: string;
 }
 
 const MODE_DESCRIPTIONS: Record<TeachingMode, string> = {
@@ -19,9 +20,13 @@ const MODE_DESCRIPTIONS: Record<TeachingMode, string> = {
   teachback: "You teach me — I'll play confused",
 };
 
-export default function ChatPanel({ messages, onSend, onAction, onEndSession, loading, mode }: Props) {
+export default function ChatPanel({ messages, onSend, onAction, onEndSession, loading, mode, prefillInput }: Props) {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (prefillInput) setInput(prefillInput);
+  }, [prefillInput]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
