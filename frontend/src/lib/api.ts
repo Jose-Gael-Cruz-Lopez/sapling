@@ -126,9 +126,6 @@ export const saveAssignments = (userId: string, assignments: any[]) =>
     body: JSON.stringify({ user_id: userId, assignments }),
   });
 
-export const getCalendarAuthUrl = (userId: string) =>
-  fetchJSON<{ url: string }>(`/api/calendar/auth-url?user_id=${encodeURIComponent(userId)}`);
-
 export const getCalendarStatus = (userId: string) =>
   fetchJSON<{ connected: boolean; expires_at?: string }>(`/api/calendar/status/${userId}`);
 export const checkCalendarStatus = getCalendarStatus;

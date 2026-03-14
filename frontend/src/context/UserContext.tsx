@@ -11,29 +11,28 @@ interface UserContextValue {
   userId: string;
   userName: string;
   users: UserOption[];
-  /** True once localStorage has been read — gates all data fetches so they
-   *  never fire with the hardcoded default user before we know the real one. */
   userReady: boolean;
+  isAuthenticated: boolean;
   setActiveUser: (id: string, name: string) => void;
+  signOut: () => void;
 }
 
 const UserContext = createContext<UserContextValue>({
-  userId: 'user_andres',
-  userName: 'Andres Lopez',
+  userId: '',
+  userName: '',
   users: [],
   userReady: false,
+  isAuthenticated: false,
   setActiveUser: () => {},
+  signOut: () => {},
 });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserId] = useState('user_andres');
-  const [userName, setUserName] = useState('Andres Lopez');
+  const [userId, setUserId] = useState('');
+  const [userName, setUserName] = useState('');
   const [users, setUsers] = useState<UserOption[]>([]);
-  // Becomes true after localStorage is read — prevents pages from fetching
-  // data with the hardcoded default before the real saved user is known.
   const [userReady, setUserReady] = useState(false);
 
-  // Restore last selected user from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('sapling_user');
     if (saved) {
@@ -46,20 +45,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setUserReady(true);
   }, []);
 
-  // Fetch user list from backend and reconcile the current user's name
   useEffect(() => {
     fetch('http://localhost:5000/api/users')
       .then(r => r.json())
       .then((data: { users: UserOption[] }) => {
-        const list = data.users ?? [];
-        setUsers(list);
-        // Always sync userName from the live backend list for the current userId
-        // so the greeting never shows a stale or hardcoded default name
-        setUserId(prev => {
-          const match = list.find(u => u.id === prev);
-          if (match) setUserName(match.name);
-          return prev;
-        });
+        setUsers(data.users ?? []);
       })
       .catch(() => {});
   }, []);
@@ -70,9 +60,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('sapling_user', JSON.stringify({ id, name }));
   };
 
+  const signOut = () => {
+    setUserId('');
+    setUserName('');
+    localStorage.removeItem('sapling_user');
+  };
+
+  const isAuthenticated = userId.startsWith('guser_');
+
   const value = useMemo(
-    () => ({ userId, userName, users, userReady, setActiveUser }),
-    [userId, userName, users, userReady]
+    () => ({ userId, userName, users, userReady, isAuthenticated, setActiveUser, signOut }),
+    [userId, userName, users, userReady, isAuthenticated]
   );
 
   return (

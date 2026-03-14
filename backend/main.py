@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import FRONTEND_URL, PORT
-from routes import graph, learn, quiz, calendar, social, extract
+from routes import graph, learn, quiz, calendar, social, extract, auth
 
 app = FastAPI(title="Sapling API", version="1.0.0")
 
@@ -20,6 +20,7 @@ app.include_router(quiz.router,     prefix="/api/quiz")
 app.include_router(calendar.router, prefix="/api/calendar")
 app.include_router(social.router,   prefix="/api/social")
 app.include_router(extract.router,  prefix="/api/extract")
+app.include_router(auth.router,     prefix="/api/auth")
 
 
 @app.get("/api/health")

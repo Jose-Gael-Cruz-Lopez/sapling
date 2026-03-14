@@ -9,7 +9,6 @@ import {
   extractSyllabus,
   saveAssignments,
   getUpcomingAssignments,
-  getCalendarAuthUrl,
   getCalendarStatus,
   syncToGoogleCalendar,
   importGoogleEvents,
@@ -298,7 +297,6 @@ function CalendarInner() {
   const [syncing, setSyncing] = useState(false);
   const [syncedCount, setSyncedCount] = useState<number | null>(null);
   const [googleConnected, setGoogleConnected] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [importingGoogle, setImportingGoogle] = useState(false);
 
@@ -362,19 +360,6 @@ function CalendarInner() {
       setWarnings([e.message || 'Save failed']);
     } finally {
       setSaving(false);
-    }
-  };
-
-  // Fixed: passes USER_ID so backend knows whose token to store
-  const handleConnectGoogle = async () => {
-    setGoogleLoading(true);
-    try {
-      const res = await getCalendarAuthUrl(USER_ID);
-      window.location.href = res.url;
-    } catch (e: any) {
-      alert(e.message || 'Failed to start Google Calendar connection.');
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -528,13 +513,9 @@ function CalendarInner() {
             )}
           </>
         ) : (
-          <button
-            onClick={handleConnectGoogle}
-            disabled={googleLoading}
-            style={{ padding: '8px 16px', background: '#ffffff', color: '#4b5563', border: '1px solid rgba(107,114,128,0.25)', borderRadius: '6px', fontSize: '13px', cursor: googleLoading ? 'default' : 'pointer', alignSelf: 'flex-start', opacity: googleLoading ? 0.6 : 1 }}
-          >
-            {googleLoading ? 'Redirecting...' : 'Connect Google Calendar'}
-          </button>
+          <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+            Sign in with Google to enable calendar sync.
+          </p>
         )}
       </div>
     </div>

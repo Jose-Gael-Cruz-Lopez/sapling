@@ -6,8 +6,6 @@ Migrated from SQLite to Supabase REST API.
 """
 
 import uuid
-import json
-import base64
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
@@ -16,16 +14,13 @@ from fastapi.responses import RedirectResponse
 from config import (
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    GOOGLE_REDIRECT_URI,
     GOOGLE_SCOPES,
-    FRONTEND_URL,
 )
 from db.connection import table
 from models import SaveAssignmentsBody, StudyBlockBody, ExportBody, SyncBody
 from services.calendar_service import extract_assignments_from_file
 
 try:
-    from google_auth_oauthlib.flow import Flow
     from googleapiclient.discovery import build
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
@@ -37,31 +32,6 @@ router = APIRouter()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _google_client_config() -> dict:
-    return {
-        "web": {
-            "client_id": GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uris": [GOOGLE_REDIRECT_URI],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-        }
-    }
-
-
-def _encode_state(user_id: str) -> str:
-    payload = json.dumps({"user_id": user_id})
-    return base64.urlsafe_b64encode(payload.encode()).decode()
-
-
-def _decode_state(state: str) -> str:
-    try:
-        payload = base64.urlsafe_b64decode(state.encode()).decode()
-        return json.loads(payload).get("user_id", "")
-    except Exception:
-        return ""
-
 
 def _get_refreshed_credentials(token_row: dict) -> "Credentials":
     creds = Credentials(
@@ -186,51 +156,6 @@ def suggest_study_blocks(body: StudyBlockBody):
     ]
     return {"study_blocks": blocks[:5]}
 
-
-# ── Google OAuth ──────────────────────────────────────────────────────────────
-
-@router.get("/auth-url")
-def auth_url(user_id: str = Query(...)):
-    if not GOOGLE_AVAILABLE or not GOOGLE_CLIENT_ID:
-        raise HTTPException(status_code=400, detail="Google Calendar not configured")
-    flow = Flow.from_client_config(_google_client_config(), scopes=GOOGLE_SCOPES)
-    flow.redirect_uri = GOOGLE_REDIRECT_URI
-    auth_url_str, _ = flow.authorization_url(
-        prompt="consent",
-        access_type="offline",
-        state=_encode_state(user_id),
-    )
-    return {"url": auth_url_str}
-
-
-@router.get("/callback")
-def callback(code: str = Query(...), state: str = Query(...)):
-    if not GOOGLE_AVAILABLE:
-        return RedirectResponse(f"{FRONTEND_URL}/calendar?error=google_not_configured")
-
-    user_id = _decode_state(state)
-    if not user_id:
-        return RedirectResponse(f"{FRONTEND_URL}/calendar?error=invalid_state")
-
-    user_rows = table("users").select("id", filters={"id": f"eq.{user_id}"})
-    if not user_rows:
-        return RedirectResponse(f"{FRONTEND_URL}/calendar?error=user_not_found")
-
-    flow = Flow.from_client_config(_google_client_config(), scopes=GOOGLE_SCOPES)
-    flow.redirect_uri = GOOGLE_REDIRECT_URI
-    flow.fetch_token(code=code)
-    creds = flow.credentials
-
-    table("oauth_tokens").upsert(
-        {
-            "user_id": user_id,
-            "access_token": creds.token,
-            "refresh_token": creds.refresh_token or "",
-            "expires_at": creds.expiry.isoformat() if creds.expiry else "",
-        },
-        on_conflict="user_id",
-    )
-    return RedirectResponse(f"{FRONTEND_URL}/calendar?connected=true&user_id={user_id}")
 
 
 @router.get("/status/{user_id}")

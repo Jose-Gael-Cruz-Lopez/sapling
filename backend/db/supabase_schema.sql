@@ -5,14 +5,19 @@
 
 -- Users
 CREATE TABLE IF NOT EXISTS users (
-    id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL,
-    email       TEXT,
-    streak_count INTEGER DEFAULT 0,
+    id               TEXT PRIMARY KEY,
+    name             TEXT NOT NULL,
+    email            TEXT,
+    streak_count     INTEGER DEFAULT 0,
     last_active_date TEXT,
-    room_id     TEXT,
-    created_at  TIMESTAMPTZ DEFAULT now()
+    room_id          TEXT,
+    created_at       TIMESTAMPTZ DEFAULT now(),
+    google_id        TEXT UNIQUE,
+    avatar_url       TEXT,
+    auth_provider    TEXT DEFAULT 'google'
 );
+
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 
 -- Knowledge graph nodes
 CREATE TABLE IF NOT EXISTS graph_nodes (
