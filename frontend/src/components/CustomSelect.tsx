@@ -69,7 +69,7 @@ export default function CustomSelect({ value, onChange, options, placeholder, st
               border: '1px solid rgba(107,114,128,0.18)',
               borderRadius: '10px',
               overflow: 'hidden',
-              zIndex: 9999,
+              zIndex: 2147483647,
               boxShadow: '0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(107,114,128,0.08)',
             }}
           >

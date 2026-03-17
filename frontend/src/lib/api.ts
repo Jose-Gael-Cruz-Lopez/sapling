@@ -218,3 +218,24 @@ export const uploadDocument = (formData: FormData): Promise<any> =>
     if (!r.ok) { const e = await r.text(); throw new Error(e || `HTTP ${r.status}`); }
     return r.json();
   });
+
+// ── Study Guide ───────────────────────────────────────────────────────────────
+
+export const getStudyGuideCourses = (userId: string) =>
+  fetchJSON<{ courses: string[] }>(`/api/study-guide/${userId}/courses`);
+
+export const getStudyGuideExams = (userId: string, course: string) =>
+  fetchJSON<{ exams: { id: string; title: string; due_date: string | null }[] }>(
+    `/api/study-guide/${userId}/exams?course=${encodeURIComponent(course)}`
+  );
+
+export const getStudyGuide = (userId: string, course: string, examId: string) =>
+  fetchJSON<{ guide: any; generated_at: string }>(
+    `/api/study-guide/${userId}/guide?course=${encodeURIComponent(course)}&exam_id=${encodeURIComponent(examId)}`
+  );
+
+export const regenerateStudyGuide = (userId: string, course: string, examId: string) =>
+  fetchJSON<{ success: boolean; generated_at: string; guide: any }>('/api/study-guide/regenerate', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, course, exam_id: examId }),
+  });

@@ -112,3 +112,11 @@ class ModeSwitchBody(BaseModel):
     session_id: str
     user_id: str = "user_andres"
     new_mode: str
+
+
+# ── Study Guide ───────────────────────────────────────────────────────────────
+
+class RegenerateStudyGuideBody(BaseModel):
+    user_id: str
+    course: str
+    exam_id: str

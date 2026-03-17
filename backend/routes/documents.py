@@ -14,6 +14,7 @@ from db.connection import table
 from services.extraction_service import extract_text_from_file
 from services.gemini_service import call_gemini_json
 from services.calendar_service import extract_assignments_from_file, save_assignments_to_db
+from routes.study_guide import trigger_regen_for_course
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +142,16 @@ async def upload_document(
                 save_assignments_to_db(user_id, assignments)
         except Exception:
             logger.exception("Assignment extraction failed for '%s' (best-effort)", filename)
+
+    # ── Trigger study guide regeneration for this course (non-blocking) ──────
+    try:
+        course_rows = table("courses").select(
+            "course_name", filters={"id": f"eq.{course_id}"}, limit=1
+        )
+        if course_rows:
+            trigger_regen_for_course(user_id, course_rows[0]["course_name"])
+    except Exception:
+        logger.debug("Could not trigger study guide regen for course_id=%s", course_id)
 
     # ── Persist to documents table ────────────────────────────────────────────
     now = datetime.now(timezone.utc).isoformat()
